@@ -1,17 +1,17 @@
 import time
 import pyupbit
 import datetime
-import requests
+# import requests
 
 access = "8G08udKYKWAvK8b1xiHDx2qYUSCOVZlcEZUDdzig"
 secret = "VAw4YLeMKiKj2UyMK91xBvqN8EKfwBNEt5WePQSL"
-myToken = "xoxb-2022591015376-1984016883127-r96PrLQPjO0E02vQd3DEZAJg"
+# myToken = "xoxb-2022591015376-1984016883127-r96PrLQPjO0E02vQd3DEZAJg"
 
-def post_message(token, channel, text):
-    """슬랙 메시지 전송"""
-    response = requests.post("https://slack.com/api/chat.postMessage",
-        headers={"Authorization": "Bearer "+token},
-        data={"channel": channel,"text": text}
+# def post_message(token, channel, text):
+#     """슬랙 메시지 전송"""
+#     response = requests.post("https://slack.com/api/chat.postMessage",
+#         headers={"Authorization": "Bearer "+token},
+#         data={"channel": channel,"text": text}
     )
 
 def get_target_price(ticker, k):
@@ -25,6 +25,12 @@ def get_start_time(ticker):
     df = pyupbit.get_ohlcv(ticker, interval="day", count=1)
     start_time = df.index[0]
     return start_time
+
+def get_ma15(ticker):
+    """15일 이동 평균선 조회"""
+    df = pyupbit.get_ohlcv(ticker, interval="day", count=15)
+    ma15 = df['close'].rolling(15).mean().iloc[-1]
+    return ma15
 
 def get_balance(ticker):
     """잔고 조회"""
@@ -45,7 +51,7 @@ upbit = pyupbit.Upbit(access, secret)
 print("autotrade start")
 
 # 시작 메세지 슬랙 전송
-post_message(myToken,"#stock", "autotrade start")
+# post_message(myToken,"#stock", "autotrade start")
 
 # 자동매매 시작
 while True:
@@ -56,19 +62,17 @@ while True:
 
         if start_time < now < end_time - datetime.timedelta(seconds=10):
             target_price = get_target_price("KRW-XRP", 0.5)
+            ma15 = get_ma15("KRW-XRP")
             current_price = get_current_price("KRW-XRP")
-            if target_price < current_price:
+            if target_price < current_price and ma15 < current_price:
                 krw = get_balance("KRW")
                 if krw > 5000:
                     upbit.buy_market_order("KRW-XRP", krw*0.9995)
-                    post_message(myToken,"#stock", "XRP buy : " +str(buy_result))
         else:
             xrp = get_balance("XRP")
             if xrp > 3.80228137:
                 upbit.sell_market_order("KRW-XRP", xrp*0.9995)
-                post_message(myToken,"#stock", "XRP buy : " +str(sell_result))
         time.sleep(1)
     except Exception as e:
         print(e)
-        post_message(myToken,"#stock", e)
         time.sleep(1)
