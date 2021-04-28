@@ -1,18 +1,9 @@
 import time
 import pyupbit
 import datetime
-# import requests
 
 access = "8G08udKYKWAvK8b1xiHDx2qYUSCOVZlcEZUDdzig"
 secret = "VAw4YLeMKiKj2UyMK91xBvqN8EKfwBNEt5WePQSL"
-# myToken = "xoxb-2022591015376-1984016883127-r96PrLQPjO0E02vQd3DEZAJg"
-
-# def post_message(token, channel, text):
-#     """슬랙 메시지 전송"""
-#     response = requests.post("https://slack.com/api/chat.postMessage",
-#         headers={"Authorization": "Bearer "+token},
-#         data={"channel": channel,"text": text}
-    )
 
 def get_target_price(ticker, k):
     """변동성 돌파 전략으로 매수 목표가 조회"""
@@ -25,12 +16,6 @@ def get_start_time(ticker):
     df = pyupbit.get_ohlcv(ticker, interval="day", count=1)
     start_time = df.index[0]
     return start_time
-
-def get_ma15(ticker):
-    """15일 이동 평균선 조회"""
-    df = pyupbit.get_ohlcv(ticker, interval="day", count=15)
-    ma15 = df['close'].rolling(15).mean().iloc[-1]
-    return ma15
 
 def get_balance(ticker):
     """잔고 조회"""
@@ -50,28 +35,24 @@ def get_current_price(ticker):
 upbit = pyupbit.Upbit(access, secret)
 print("autotrade start")
 
-# 시작 메세지 슬랙 전송
-# post_message(myToken,"#stock", "autotrade start")
-
 # 자동매매 시작
 while True:
     try:
         now = datetime.datetime.now()
-        start_time = get_start_time("KRW-XRP") #9:00
+        start_time = get_start_time("KRW-FLOW")
         end_time = start_time + datetime.timedelta(days=1)
 
         if start_time < now < end_time - datetime.timedelta(seconds=10):
-            target_price = get_target_price("KRW-XRP", 0.5)
-            ma15 = get_ma15("KRW-XRP")
-            current_price = get_current_price("KRW-XRP")
-            if target_price < current_price and ma15 < current_price:
+            target_price = get_target_price("KRW-FLOW", 0.5)
+            current_price = get_current_price("KRW-FLOW")
+            if target_price < current_price:
                 krw = get_balance("KRW")
                 if krw > 5000:
-                    upbit.buy_market_order("KRW-XRP", krw*0.9995)
+                    upbit.buy_market_order("KRW-FLOW", krw*0.9995)
         else:
-            xrp = get_balance("XRP")
-            if xrp > 3.80228137:
-                upbit.sell_market_order("KRW-XRP", xrp*0.9995)
+            FLOW = get_balance("FLOW")
+            if FLOW > 0.13210039:
+                upbit.sell_market_order("KRW-FLOW", FLOW*0.9995)
         time.sleep(1)
     except Exception as e:
         print(e)
